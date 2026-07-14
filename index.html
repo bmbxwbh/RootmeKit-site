@@ -1107,6 +1107,22 @@ async function main() {
   // ── Stage 7: Write preload.so and execute ──
   logInfo('[7/7] 写入 preload.so 并执行 Root 命令...');
 
+  // ELF magic: 0x7f 'E' 'L' 'F'
+  if (preloadSoData.length < 4 ||
+      preloadSoData[0] !== 0x7f || preloadSoData[1] !== 0x45 ||
+      preloadSoData[2] !== 0x4c || preloadSoData[3] !== 0x46) {
+    logErr('文件不是有效的 ELF 共享库 (expected magic: 7f454c46)');
+    dbgDump('Stage7 ELF校验失败', {
+      fileSize: preloadSoData.length,
+      first4Bytes: preloadSoData.length >= 4
+        ? dbgHex((preloadSoData[0] << 24) | (preloadSoData[1] << 16) | (preloadSoData[2] << 8) | preloadSoData[3])
+        : 'N/A',
+      hint: '请确认上传的是编译产物 .so 文件, 而非 APK/ZIP/源码包等'
+    });
+    quit(54);
+  }
+  dbgLog('[Stage7] ELF magic 校验通过: 7f454c46');
+
   const PRELOAD_TARGET = PRIVATE_DIR + "/res";
 
   // Create target directory and empty file
