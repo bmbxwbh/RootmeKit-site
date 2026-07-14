@@ -1,169 +1,586 @@
 <!doctype html>
+<html lang="zh">
+<head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>RootmeKit</title>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;600&display=swap" rel="stylesheet">
 <style>
-*{box-sizing:border-box;margin:0;padding:0}
-body{background:#080b0f;font-family:'Courier New',monospace;color:#ccc}
-#wrap{display:flex;flex-direction:column;align-items:center;justify-content:center;min-height:100svh;gap:clamp(16px,4vw,28px);padding:clamp(16px,5vw,32px)}
-#header{text-align:center}
-#title{color:#ff4444;font-size:clamp(16px,4.5vw,22px);letter-spacing:clamp(1px,0.5vw,3px);text-shadow:0 0 14px rgba(255,68,68,0.7);margin-bottom:8px;word-break:break-word}
-#subtitle{color:#556;font-size:clamp(11px,3vw,13px);letter-spacing:1px}
-hr{width:min(320px,88vw);border:none;border-top:1px solid #2a1a1a}
-#label{color:#554;font-size:clamp(10px,2.5vw,12px);letter-spacing:2px;text-transform:uppercase}
-#btns{display:flex;flex-direction:column;gap:clamp(10px,2.5vw,14px);width:min(380px,92vw)}
-.btn{display:flex;flex-direction:column;gap:5px;padding:clamp(14px,3.5vw,18px) clamp(14px,4vw,22px);background:rgba(255,68,68,0.03);border:1px solid #3a1e1e;border-radius:8px;color:#ff4444;font-family:inherit;cursor:pointer;text-align:left;transition:background .15s,border-color .15s,box-shadow .15s;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
-.btn:hover{background:rgba(255,68,68,0.09);border-color:#ff4444;box-shadow:0 0 20px rgba(255,68,68,0.2)}
-.btn:active{background:rgba(255,68,68,0.15);transform:scale(0.985)}
-.btn-tag{font-size:clamp(10px,2.5vw,12px);color:#554;letter-spacing:1px}
-.btn-name{font-size:clamp(13px,3.5vw,16px);color:#ff4444;word-break:break-all}
-.btn-desc{font-size:clamp(10px,2.5vw,11px);color:#665}
-#note{color:#443;font-size:clamp(10px,2.5vw,12px);text-align:center;max-width:min(340px,88vw);line-height:1.7}
-#upload-section{display:none;flex-direction:column;align-items:center;gap:12px;width:min(380px,92vw)}
-#fileLabel{display:inline-block;padding:12px 24px;background:rgba(255,68,68,0.06);border:1px dashed #5a2e2e;border-radius:8px;color:#ff4444;cursor:pointer;font-size:14px;transition:background .15s}
-#fileLabel:hover{background:rgba(255,68,68,0.12)}
-#fileInput{display:none}
-#fileInfo{color:#556;font-size:12px}
-#term-section{display:none;flex-direction:column;gap:10px;width:min(600px,95vw);max-height:70vh}
-#live{font-size:14px;white-space:pre-wrap;min-height:20px;color:#ff4444}
-#terminal{background:#0a0e14;border:1px solid #1a1e28;border-radius:6px;padding:12px;font-size:13px;max-height:50vh;overflow-y:auto;white-space:pre-wrap;word-break:break-all}
-#status{font-size:13px;color:#556;text-align:center}
-.log-info{color:#8899aa}
-.log-ok{color:#44ff44}
-.log-err{color:#ff4444}
-.log-warn{color:#ffaa00}
-#result-section{display:none;flex-direction:column;align-items:center;gap:12px;width:min(500px,92vw);padding:20px;background:rgba(255,68,68,0.03);border:1px solid #2a1a1a;border-radius:8px}
-#result-title{font-size:16px;color:#ff4444}
-#result-output{font-size:13px;white-space:pre-wrap;max-height:30vh;overflow-y:auto;background:#0a0e14;padding:10px;border-radius:4px;width:100%}
-#debugBtns{display:flex;gap:8px}
-#debugBtns button{padding:6px 14px;background:rgba(255,68,68,0.06);border:1px solid #3a1e1e;border-radius:4px;color:#ff4444;font-family:inherit;font-size:12px;cursor:pointer}
+:root {
+  --md-sys-color-primary: #FFB4AB;
+  --md-sys-color-on-primary: #690005;
+  --md-sys-color-primary-container: #93000A;
+  --md-sys-color-on-primary-container: #FFDAD6;
+  --md-sys-color-secondary: #E7BDB6;
+  --md-sys-color-on-secondary: #44292A;
+  --md-sys-color-secondary-container: #5D3F3F;
+  --md-sys-color-on-secondary-container: #FFDAD6;
+  --md-sys-color-tertiary: #E8C18C;
+  --md-sys-color-on-tertiary: #462B00;
+  --md-sys-color-tertiary-container: #644100;
+  --md-sys-color-on-tertiary-container: #FFDDB3;
+  --md-sys-color-error: #FFB4AB;
+  --md-sys-color-on-error: #690005;
+  --md-sys-color-error-container: #93000A;
+  --md-sys-color-on-error-container: #FFDAD6;
+  --md-sys-color-background: #1A1111;
+  --md-sys-color-on-background: #F1DFDF;
+  --md-sys-color-surface: #1A1111;
+  --md-sys-color-on-surface: #F1DFDF;
+  --md-sys-color-surface-variant: #534342;
+  --md-sys-color-on-surface-variant: #D8C2C0;
+  --md-sys-color-outline: #A08C8B;
+  --md-sys-color-outline-variant: #534342;
+  --md-sys-color-surface-container-lowest: #140C0C;
+  --md-sys-color-surface-container-low: #231919;
+  --md-sys-color-surface-container: #271D1D;
+  --md-sys-color-surface-container-high: #322727;
+  --md-sys-color-surface-container-highest: #3D3232;
+  --md-sys-shape-corner-large: 28px;
+  --md-sys-shape-corner-medium: 16px;
+  --md-sys-shape-corner-small: 8px;
+  --md-sys-shape-corner-extra-small: 4px;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: 'Noto Sans SC', system-ui, sans-serif;
+  background: var(--md-sys-color-background);
+  color: var(--md-sys-color-on-background);
+  min-height: 100svh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.container {
+  width: min(480px, 100vw - 32px);
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+  padding: 24px 0 40px;
+}
+
+/* ── Top App Bar ── */
+.top-bar {
+  width: 100%;
+  padding: 20px 0 8px;
+  text-align: center;
+}
+.top-bar h1 {
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--md-sys-color-on-surface);
+  letter-spacing: 0.5px;
+}
+.top-bar .subtitle {
+  font-size: 12px;
+  color: var(--md-sys-color-outline);
+  margin-top: 4px;
+  letter-spacing: 0.4px;
+}
+
+/* ── MD3 Card ── */
+.card {
+  background: var(--md-sys-color-surface-container);
+  border-radius: var(--md-sys-shape-corner-medium);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.card-header {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--md-sys-color-on-surface-variant);
+  letter-spacing: 0.1px;
+}
+.card-title {
+  font-size: 16px;
+  font-weight: 500;
+  color: var(--md-sys-color-on-surface);
+}
+
+/* ── MD3 Buttons ── */
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 40px;
+  padding: 0 24px;
+  border-radius: 20px;
+  font-family: inherit;
+  font-size: 14px;
+  font-weight: 500;
+  letter-spacing: 0.1px;
+  cursor: pointer;
+  border: none;
+  transition: box-shadow 0.2s, background 0.2s;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
+}
+.btn-filled {
+  background: var(--md-sys-color-primary);
+  color: var(--md-sys-color-on-primary);
+}
+.btn-filled:hover { box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
+.btn-filled:disabled {
+  background: color-mix(in srgb, var(--md-sys-color-on-surface) 12%, transparent);
+  color: color-mix(in srgb, var(--md-sys-color-on-surface) 38%, transparent);
+  cursor: default;
+  box-shadow: none;
+}
+.btn-tonal {
+  background: var(--md-sys-color-secondary-container);
+  color: var(--md-sys-color-on-secondary-container);
+}
+.btn-tonal:hover { box-shadow: 0 1px 3px rgba(0,0,0,0.3); }
+.btn-outlined {
+  background: transparent;
+  color: var(--md-sys-color-primary);
+  border: 1px solid var(--md-sys-color-outline);
+}
+.btn-outlined:hover { background: color-mix(in srgb, var(--md-sys-color-primary) 8%, transparent); }
+.btn-text {
+  background: transparent;
+  color: var(--md-sys-color-primary);
+  padding: 0 12px;
+}
+.btn-text:hover { background: color-mix(in srgb, var(--md-sys-color-primary) 8%, transparent); }
+.btn-full { width: 100%; }
+
+/* ── MD3 Chip (device selector) ── */
+.chip-group { display: flex; flex-wrap: wrap; gap: 8px; }
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  height: 32px;
+  padding: 0 16px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  border: 1px solid var(--md-sys-color-outline);
+  background: transparent;
+  color: var(--md-sys-color-on-surface-variant);
+  transition: all 0.2s;
+  -webkit-tap-highlight-color: transparent;
+}
+.chip:hover { background: color-mix(in srgb, var(--md-sys-color-on-surface-variant) 8%, transparent); }
+.chip.selected {
+  background: var(--md-sys-color-secondary-container);
+  color: var(--md-sys-color-on-secondary-container);
+  border-color: transparent;
+}
+.chip .dot {
+  width: 6px; height: 6px; border-radius: 50%;
+  background: var(--md-sys-color-outline);
+}
+.chip.selected .dot { background: var(--md-sys-color-primary); }
+
+/* ── MD3 Progress ── */
+.progress-bar {
+  width: 100%;
+  height: 4px;
+  background: var(--md-sys-color-surface-container-highest);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.progress-bar .fill {
+  height: 100%;
+  background: var(--md-sys-color-primary);
+  border-radius: 2px;
+  transition: width 0.3s;
+}
+.spinner {
+  width: 20px; height: 20px;
+  border: 2px solid var(--md-sys-color-surface-container-highest);
+  border-top-color: var(--md-sys-color-primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── Terminal ── */
+.terminal-card {
+  background: var(--md-sys-color-surface-container-lowest);
+  border-radius: var(--md-sys-shape-corner-medium);
+  padding: 16px;
+  max-height: 50vh;
+  overflow-y: auto;
+  font-family: 'Cascadia Code', 'Fira Code', 'JetBrains Mono', monospace;
+  font-size: 12px;
+  line-height: 1.6;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+.terminal-card .log-info { color: #89B4FA; }
+.terminal-card .log-ok { color: #A6E3A1; }
+.terminal-card .log-err { color: #F38BA8; }
+.terminal-card .log-warn { color: #FAB387; }
+
+/* ── Status chips ── */
+.status-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--md-sys-color-on-surface-variant);
+}
+.status-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  height: 24px;
+  padding: 0 10px;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 500;
+}
+.status-chip.success {
+  background: color-mix(in srgb, #A6E3A1 15%, transparent);
+  color: #A6E3A1;
+}
+.status-chip.failure {
+  background: color-mix(in srgb, #F38BA8 15%, transparent);
+  color: #F38BA8;
+}
+.status-chip.running {
+  background: color-mix(in srgb, var(--md-sys-color-primary) 15%, transparent);
+  color: var(--md-sys-color-primary);
+}
+
+/* ── Result banner ── */
+.result-banner {
+  border-radius: var(--md-sys-shape-corner-medium);
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+.result-banner.success {
+  background: color-mix(in srgb, #A6E3A1 10%, var(--md-sys-color-surface-container));
+  border: 1px solid color-mix(in srgb, #A6E3A1 30%, transparent);
+}
+.result-banner.failure {
+  background: color-mix(in srgb, #F38BA8 10%, var(--md-sys-color-surface-container));
+  border: 1px solid color-mix(in srgb, #F38BA8 30%, transparent);
+}
+.result-banner h2 {
+  font-size: 18px;
+  font-weight: 600;
+}
+.result-banner.success h2 { color: #A6E3A1; }
+.result-banner.failure h2 { color: #F38BA8; }
+.result-output {
+  background: var(--md-sys-color-surface-container-lowest);
+  border-radius: var(--md-sys-shape-corner-small);
+  padding: 12px;
+  font-family: monospace;
+  font-size: 11px;
+  max-height: 25vh;
+  overflow-y: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+  color: var(--md-sys-color-on-surface-variant);
+}
+.action-row { display: flex; gap: 8px; }
+
+/* ── File input ── */
+.file-drop {
+  border: 1px dashed var(--md-sys-color-outline);
+  border-radius: var(--md-sys-shape-corner-medium);
+  padding: 32px 20px;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 0.2s, background 0.2s;
+}
+.file-drop:hover {
+  border-color: var(--md-sys-color-primary);
+  background: color-mix(in srgb, var(--md-sys-color-primary) 5%, transparent);
+}
+.file-drop input { display: none; }
+.file-drop .icon { font-size: 32px; margin-bottom: 8px; }
+.file-drop .label { font-size: 14px; color: var(--md-sys-color-on-surface-variant); }
+.file-drop .hint { font-size: 12px; color: var(--md-sys-color-outline); margin-top: 4px; }
+
+/* ── Divider ── */
+.divider {
+  height: 1px;
+  background: var(--md-sys-color-outline-variant);
+  margin: 4px 0;
+}
+
+/* ── Snackbar ── */
+.snackbar {
+  position: fixed;
+  bottom: 24px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--md-sys-color-surface-container-highest);
+  color: var(--md-sys-color-on-surface);
+  padding: 12px 16px;
+  border-radius: var(--md-sys-shape-corner-extra-small);
+  font-size: 14px;
+  box-shadow: 0 3px 8px rgba(0,0,0,0.4);
+  z-index: 100;
+  opacity: 0;
+  transition: opacity 0.3s;
+  pointer-events: none;
+}
+.snackbar.show { opacity: 1; }
+
+/* ── Section visibility ── */
+.hidden { display: none !important; }
+
+/* ── Responsive ── */
+@media (max-width: 360px) {
+  .container { padding: 16px 0 32px; }
+  .card { padding: 16px; }
+}
 </style>
+</head>
 
 <body>
-<div id="wrap">
-  <div id="header">
-    <div id="title">RootmeKit</div>
-    <div id="subtitle">Firefox 151.0 JIT Type Confusion &mdash; CVE-2026-43499</div>
-  </div>
-  <hr>
-  <div id="label">// Target Device</div>
-  <div id="btns"></div>
-  <div id="note">请选择目标设备型号。版本选错可能导致设备重启，exploit 成功率约 95%。</div>
-
-  <div id="upload-section">
-    <label id="fileLabel" for="fileInput">选择 preload.so 文件</label>
-    <input type="file" id="fileInput" accept=".so">
-    <div id="fileInfo"></div>
+<div class="container">
+  <!-- Top Bar -->
+  <div class="top-bar">
+    <h1>RootmeKit</h1>
+    <div class="subtitle">Firefox 151.0 JIT Type Confusion &mdash; CVE-2026-43499</div>
   </div>
 
-  <div id="term-section">
-    <div id="live"></div>
-    <div id="terminal"></div>
-    <div id="status"></div>
+  <!-- Step 1: Device Select -->
+  <div id="step-device" class="card">
+    <div class="card-header">选择目标设备</div>
+    <div id="device-chips" class="chip-group"></div>
+    <div id="device-info" style="font-size:12px;color:var(--md-sys-color-outline);min-height:18px"></div>
   </div>
 
-  <div id="result-section">
-    <div id="result-title"></div>
-    <pre id="result-output"></pre>
-    <div id="debugBtns">
-      <button onclick="copyLog()">复制日志</button>
-      <button onclick="downloadLog()">下载日志</button>
+  <!-- Step 2: Load preload.so -->
+  <div id="step-load" class="card hidden">
+    <div class="card-header">加载 preload.so</div>
+    <div id="auto-status" class="status-row hidden">
+      <div class="spinner"></div>
+      <span>正在从 GitHub 获取最新构建...</span>
+    </div>
+    <div id="auto-result" class="hidden"></div>
+    <div class="divider"></div>
+    <div id="file-drop" class="file-drop">
+      <input type="file" id="file-input" accept=".so">
+      <div class="icon">&#128194;</div>
+      <div class="label">手动选择 preload.so</div>
+      <div class="hint">支持拖拽或点击选择文件</div>
+    </div>
+    <button id="btn-start" class="btn btn-filled btn-full hidden" disabled>
+      开始 Root
+    </button>
+  </div>
+
+  <!-- Step 3: Exploit running -->
+  <div id="step-exploit" class="hidden">
+    <div class="card">
+      <div class="status-row">
+        <div class="spinner"></div>
+        <span id="attempt-status">尝试 1/3...</span>
+        <span id="elapsed-time" style="margin-left:auto;font-variant-numeric:tabular-nums">00:00</span>
+      </div>
+      <div class="progress-bar"><div id="progress-fill" class="fill" style="width:0%"></div></div>
+    </div>
+    <div id="terminal" class="terminal-card"></div>
+  </div>
+
+  <!-- Step 4: Result -->
+  <div id="step-result" class="hidden">
+    <div id="result-banner" class="result-banner">
+      <h2 id="result-title"></h2>
+      <pre id="result-output" class="result-output"></pre>
+      <div class="action-row">
+        <button class="btn btn-tonal" onclick="copyLog()">复制日志</button>
+        <button class="btn btn-outlined" onclick="downloadLog()">下载日志</button>
+      </div>
     </div>
   </div>
 </div>
 
+<div id="snackbar" class="snackbar"></div>
+
 <script>
-// ─── Configuration ────────────────────────────────────────────────────────────
+const GITHUB_API = 'https://api.github.com/repos/bmbxwbh/RootmeKit/releases';
 const MAX_ATTEMPTS = 3;
 const ATTEMPT_TIMEOUT_MS = 8000;
 const RUN_ID = Date.now().toString(36) + Math.random().toString(36).slice(2);
 
 const DEVICES = [
-  { id: 'k90max', name: 'Redmi K80 Ultra', tag: 'PRELOAD.SO', desc: 'prague / k90max — 需要自备 preload.so' },
+  { id: 'prague', name: 'Redmi K80 Ultra', codename: 'prague', keywords: ['prague', 'k90max', 'k80ultra'] },
 ];
 
-// ─── State ────────────────────────────────────────────────────────────────────
 let preloadDataBase64 = null;
-let preloadFileName = '';
 let selectedDevice = null;
 let done = false;
 let attempt = 0;
 let timer = 0;
 let wakeLock = null;
 let lastResultLines = [];
-let lastFinalMessage = '';
+let startTs = 0;
+let elapsedTimer = 0;
 
-// ─── DOM refs ─────────────────────────────────────────────────────────────────
-const btnsEl = document.getElementById('btns');
-const uploadSection = document.getElementById('upload-section');
-const fileInput = document.getElementById('fileInput');
-const fileLabel = document.getElementById('fileLabel');
-const fileInfo = document.getElementById('fileInfo');
-const termSection = document.getElementById('term-section');
-const terminalEl = document.getElementById('terminal');
-const liveEl = document.getElementById('live');
-const statusEl = document.getElementById('status');
-const resultSection = document.getElementById('result-section');
-const resultTitle = document.getElementById('result-title');
-const resultOutput = document.getElementById('result-output');
-const noteEl = document.getElementById('note');
-const labelEl = document.getElementById('label');
+const $ = (s) => document.getElementById(s);
+const stepDevice = $('step-device');
+const stepLoad = $('step-load');
+const stepExploit = $('step-exploit');
+const stepResult = $('step-result');
 
-// ─── Version selector ─────────────────────────────────────────────────────────
-function buildDeviceButtons() {
-  DEVICES.forEach(function(dev) {
-    const btn = document.createElement('button');
-    btn.className = 'btn';
-    btn.innerHTML =
-      '<span class="btn-tag">' + dev.tag + '</span>' +
-      '<span class="btn-name">' + dev.name + '</span>' +
-      (dev.desc ? '<span class="btn-desc">' + dev.desc + '</span>' : '');
-    btn.addEventListener('click', function() {
+function show(el) { el.classList.remove('hidden'); }
+function hide(el) { el.classList.add('hidden'); }
+
+function snack(msg) {
+  const el = $('snackbar');
+  el.textContent = msg;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 3000);
+}
+
+// ─── Device selector ─────────────────────────────────────────────────────────
+function buildDeviceChips() {
+  const group = $('device-chips');
+  DEVICES.forEach(dev => {
+    const chip = document.createElement('button');
+    chip.className = 'chip';
+    chip.innerHTML = '<span class="dot"></span>' + dev.name;
+    chip.addEventListener('click', () => {
+      group.querySelectorAll('.chip').forEach(c => c.classList.remove('selected'));
+      chip.classList.add('selected');
       selectedDevice = dev;
-      btnsEl.style.display = 'none';
-      labelEl.textContent = '// Upload preload.so';
-      noteEl.textContent = '请上传为 ' + dev.name + ' 编译的 preload.so 文件';
-      uploadSection.style.display = 'flex';
+      $('device-info').textContent = 'codename: ' + dev.codename;
+      show(stepLoad);
+      fetchLatestSo(dev);
     });
-    btnsEl.appendChild(btn);
+    group.appendChild(chip);
   });
 }
 
-// ─── File upload ──────────────────────────────────────────────────────────────
-fileInput.addEventListener('change', function() {
-  const file = this.files[0];
+// ─── Fetch latest preload.so from GitHub Releases ─────────────────────────────
+async function fetchLatestSo(device) {
+  const statusEl = $('auto-status');
+  const resultEl = $('auto-result');
+  show(statusEl);
+  hide(resultEl);
+
+  try {
+    const resp = await fetch(GITHUB_API + '?per_page=20');
+    if (!resp.ok) throw new Error('API ' + resp.status);
+    const releases = await resp.json();
+
+    let found = null;
+    for (const rel of releases) {
+      if (!rel.assets || rel.assets.length === 0) continue;
+      const body = (rel.body || '').toLowerCase();
+      const name = (rel.name || '').toLowerCase();
+      const tag = (rel.tag_name || '').toLowerCase();
+      const haystack = body + ' ' + name + ' ' + tag;
+      if (device.keywords.some(kw => haystack.includes(kw))) {
+        const soAsset = rel.assets.find(a => a.name === 'preload.so');
+        if (soAsset) {
+          found = { release: rel, asset: soAsset };
+          break;
+        }
+      }
+    }
+
+    hide(statusEl);
+    if (found) {
+      const rel = found.release;
+      const asset = found.asset;
+      resultEl.innerHTML =
+        '<div class="status-row">' +
+        '<span class="status-chip success">LATEST</span>' +
+        '<span>' + (rel.tag_name || '') + ' &mdash; ' + (asset.size / 1024).toFixed(1) + ' KB</span>' +
+        '</div>';
+      show(resultEl);
+
+      const dlResp = await fetch(asset.browser_download_url);
+      if (!dlResp.ok) throw new Error('Download ' + dlResp.status);
+      const buf = await dlResp.arrayBuffer();
+      const data = new Uint8Array(buf);
+      if (data[0] !== 0x7f || data[1] !== 0x45 || data[2] !== 0x4c || data[3] !== 0x46) {
+        throw new Error('不是有效的 ELF 文件');
+      }
+      let binary = '';
+      for (let i = 0; i < data.length; i++) binary += String.fromCharCode(data[i]);
+      preloadDataBase64 = btoa(binary);
+      resultEl.innerHTML +=
+        '<div style="font-size:12px;color:#A6E3A1;margin-top:4px">自动获取成功 (' + data.length + ' bytes)</div>';
+      show($('btn-start'));
+      $('btn-start').disabled = false;
+      $('file-drop').querySelector('.label').textContent = '或手动选择其他文件';
+    } else {
+      resultEl.innerHTML =
+        '<div style="font-size:12px;color:var(--md-sys-color-outline)">未找到匹配的构建，请手动上传</div>';
+      show(resultEl);
+    }
+  } catch (e) {
+    hide(statusEl);
+    resultEl.innerHTML =
+      '<div style="font-size:12px;color:var(--md-sys-color-error)">获取失败: ' + e.message + '，请手动上传</div>';
+    show(resultEl);
+  }
+}
+
+// ─── File upload (manual fallback) ────────────────────────────────────────────
+$('file-input').addEventListener('change', function() {
+  handleFile(this.files[0]);
+});
+
+const fileDrop = $('file-drop');
+fileDrop.addEventListener('click', () => $('file-input').click());
+fileDrop.addEventListener('dragover', e => { e.preventDefault(); fileDrop.style.borderColor = 'var(--md-sys-color-primary)'; });
+fileDrop.addEventListener('dragleave', () => { fileDrop.style.borderColor = ''; });
+fileDrop.addEventListener('drop', e => {
+  e.preventDefault();
+  fileDrop.style.borderColor = '';
+  handleFile(e.dataTransfer.files[0]);
+});
+
+function handleFile(file) {
   if (!file) return;
-  preloadFileName = file.name;
-  fileLabel.textContent = '已选择: ' + file.name;
   const reader = new FileReader();
   reader.onload = function(e) {
     const data = new Uint8Array(e.target.result);
     if (data[0] !== 0x7f || data[1] !== 0x45 || data[2] !== 0x4c || data[3] !== 0x46) {
-      fileInfo.textContent = '错误: 不是有效的 ELF 文件';
-      fileInfo.style.color = '#ff4444';
+      snack('不是有效的 ELF 文件');
       return;
     }
     let binary = '';
     for (let i = 0; i < data.length; i++) binary += String.fromCharCode(data[i]);
     preloadDataBase64 = btoa(binary);
-    fileInfo.textContent = file.name + ' (' + data.length + ' bytes) — 准备就绪';
-    fileInfo.style.color = '#44ff44';
-    fileLabel.textContent = '重新选择文件';
-    startExploit();
+    fileDrop.querySelector('.label').textContent = file.name + ' (' + (data.length / 1024).toFixed(1) + ' KB)';
+    fileDrop.querySelector('.hint').textContent = '点击可更换文件';
+    show($('btn-start'));
+    $('btn-start').disabled = false;
+    snack('文件加载成功');
   };
   reader.readAsArrayBuffer(file);
-});
+}
 
-// ─── Exploit control ──────────────────────────────────────────────────────────
+// ─── Start exploit ───────────────────────────────────────────────────────────
+$('btn-start').addEventListener('click', startExploit);
+
 function startExploit() {
-  uploadSection.style.display = 'none';
-  noteEl.style.display = 'none';
-  labelEl.textContent = '// Exploit';
-  termSection.style.display = 'flex';
+  if (!preloadDataBase64) { snack('请先加载 preload.so'); return; }
+  hide(stepDevice);
+  hide(stepLoad);
+  show(stepExploit);
   keepScreenAwake();
   attempt = 0;
   done = false;
+  startTs = Date.now();
+  elapsedTimer = setInterval(updateElapsed, 1000);
   startAttempt();
+}
+
+function updateElapsed() {
+  const s = Math.floor((Date.now() - startTs) / 1000);
+  $('elapsed-time').textContent = String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
 }
 
 function childUrl(n) {
@@ -173,70 +590,60 @@ function childUrl(n) {
 function startAttempt() {
   if (done || attempt >= MAX_ATTEMPTS) return;
   attempt++;
-  statusEl.textContent = '尝试 ' + attempt + '/' + MAX_ATTEMPTS + '...';
-  termClear();
+  $('attempt-status').textContent = '尝试 ' + attempt + '/' + MAX_ATTEMPTS + '...';
+  $('progress-fill').style.width = ((attempt - 1) / MAX_ATTEMPTS * 100) + '%';
+  clearTerminal();
 
   const frame = document.createElement('iframe');
   frame.style.cssText = 'position:fixed;left:0;top:0;width:1px;height:1px;opacity:0.01;pointer-events:none;border:0';
   frame.src = childUrl(attempt);
   document.body.appendChild(frame);
 
-  timer = setTimeout(function() {
+  timer = setTimeout(() => {
     if (!done) {
-      termLog('[!] 超时 (' + (ATTEMPT_TIMEOUT_MS/1000) + 's), 重试...', 'log-warn');
+      termLog('[!] 超时，重试...', 'log-warn');
       try { frame.remove(); } catch(e) {}
-      if (attempt >= MAX_ATTEMPTS) {
-        showFailure('所有尝试均已超时');
-      } else {
-        startAttempt();
-      }
+      if (attempt >= MAX_ATTEMPTS) showFailure('所有尝试均已超时');
+      else startAttempt();
     }
   }, ATTEMPT_TIMEOUT_MS);
 }
 
-function termClear() { terminalEl.textContent = ''; }
+// ─── Terminal ────────────────────────────────────────────────────────────────
+function clearTerminal() { $('terminal').textContent = ''; }
 function termLog(msg, cls) {
   const span = document.createElement('span');
   span.className = cls || '';
   span.textContent = msg + '\n';
-  terminalEl.appendChild(span);
-  terminalEl.scrollTop = terminalEl.scrollHeight;
+  $('terminal').appendChild(span);
+  $('terminal').scrollTop = $('terminal').scrollHeight;
 }
 
-// ─── Message handler ──────────────────────────────────────────────────────────
+// ─── Message handler ─────────────────────────────────────────────────────────
 addEventListener('message', function(event) {
   const data = event.data;
   if (!data || data.run !== RUN_ID || done) return;
 
-  if (data.type === 'ready') {
-    clearTimeout(timer);
-    return;
-  }
+  if (data.type === 'ready') { clearTimeout(timer); return; }
 
   if (data.type === 'progress') {
     clearTimeout(timer);
     if (Array.isArray(data.lines)) {
-      const lines = data.lines;
-      termClear();
-      for (let i = 0; i < lines.length; i++) {
-        const line = lines[i];
+      clearTerminal();
+      data.lines.forEach(line => {
         let cls = '';
         if (line.indexOf('[+]') >= 0) cls = 'log-ok';
         else if (line.indexOf('[-]') >= 0) cls = 'log-err';
         else if (line.indexOf('[!]') >= 0) cls = 'log-warn';
         else if (line.indexOf('[*]') >= 0) cls = 'log-info';
         termLog(line, cls);
-      }
-      liveEl.textContent = lines[lines.length - 1] || '';
+      });
     }
-    timer = setTimeout(function() {
+    timer = setTimeout(() => {
       if (!done) {
-        termLog('[!] 响应超时, 重试...', 'log-warn');
-        if (attempt >= MAX_ATTEMPTS) {
-          showFailure('所有尝试均失败');
-        } else {
-          startAttempt();
-        }
+        termLog('[!] 响应超时，重试...', 'log-warn');
+        if (attempt >= MAX_ATTEMPTS) showFailure('所有尝试均失败');
+        else startAttempt();
       }
     }, ATTEMPT_TIMEOUT_MS);
     return;
@@ -245,14 +652,8 @@ addEventListener('message', function(event) {
   if (data.type === 'fail') {
     clearTimeout(timer);
     lastResultLines = Array.isArray(data.lines) ? data.lines : [];
-    lastFinalMessage = data.finalMessage || 'exploit 失败';
-    if (attempt >= MAX_ATTEMPTS) {
-      done = true;
-      showFailure(lastFinalMessage);
-    } else {
-      termLog('[!] 尝试 ' + attempt + ' 失败: ' + lastFinalMessage + ', 重试...', 'log-warn');
-      setTimeout(startAttempt, 500);
-    }
+    if (attempt >= MAX_ATTEMPTS) showFailure(data.finalMessage || 'exploit 失败');
+    else { termLog('[!] 尝试 ' + attempt + ' 失败，重试...', 'log-warn'); setTimeout(startAttempt, 500); }
     return;
   }
 
@@ -260,79 +661,68 @@ addEventListener('message', function(event) {
     done = true;
     clearTimeout(timer);
     lastResultLines = Array.isArray(data.lines) ? data.lines : [];
-    lastFinalMessage = data.finalMessage || 'Root 成功';
     showSuccess();
     return;
   }
 });
 
-// ─── Results display ──────────────────────────────────────────────────────────
+// ─── Results ─────────────────────────────────────────────────────────────────
 function showSuccess() {
-  resultSection.style.display = 'flex';
-  resultTitle.textContent = 'Root 成功!';
-  resultTitle.style.color = '#44ff44';
-  resultOutput.textContent = lastResultLines.join('\n');
-  statusEl.textContent = '尝试 ' + attempt + '/' + MAX_ATTEMPTS + ' — 成功';
+  clearInterval(elapsedTimer);
+  hide(stepExploit);
+  show(stepResult);
+  const banner = $('result-banner');
+  banner.className = 'result-banner success';
+  $('result-title').textContent = 'Root 成功!';
+  $('result-output').textContent = lastResultLines.join('\n');
+  $('progress-fill').style.width = '100%';
   releaseWakeLock();
 }
 
 function showFailure(msg) {
   done = true;
-  resultSection.style.display = 'flex';
-  resultTitle.textContent = 'Exploit 失败';
-  resultTitle.style.color = '#ff4444';
-  resultOutput.textContent = lastResultLines.join('\n') + '\n\n失败原因: ' + msg;
-  statusEl.textContent = '尝试 ' + attempt + '/' + MAX_ATTEMPTS + ' — 失败';
+  clearInterval(elapsedTimer);
+  hide(stepExploit);
+  show(stepResult);
+  const banner = $('result-banner');
+  banner.className = 'result-banner failure';
+  $('result-title').textContent = 'Exploit 失败';
+  $('result-output').textContent = lastResultLines.join('\n') + '\n\n' + msg;
   releaseWakeLock();
 }
 
-// ─── Wake Lock ────────────────────────────────────────────────────────────────
+// ─── Wake Lock ───────────────────────────────────────────────────────────────
 async function keepScreenAwake() {
   if (!navigator.wakeLock || wakeLock) return;
   try { wakeLock = await navigator.wakeLock.request('screen'); } catch(e) {}
 }
-
 function releaseWakeLock() {
-  if (wakeLock) {
-    try { wakeLock.release(); } catch(e) {}
-    wakeLock = null;
-  }
+  if (wakeLock) { try { wakeLock.release(); } catch(e) {} wakeLock = null; }
 }
 
-// ─── Page lifecycle ───────────────────────────────────────────────────────────
-addEventListener('visibilitychange', function() {
-  if (document.hidden && !done) {
-    termLog('[!] 页面切到后台，exploit 可能不稳定', 'log-warn');
-  }
+// ─── Page lifecycle ──────────────────────────────────────────────────────────
+addEventListener('visibilitychange', () => {
+  if (document.hidden && !done) snack('切到后台可能影响 exploit 稳定性');
+});
+addEventListener('pagehide', () => {
+  done = true; clearTimeout(timer); clearInterval(elapsedTimer); releaseWakeLock();
 });
 
-addEventListener('pagehide', function() {
-  done = true;
-  clearTimeout(timer);
-  releaseWakeLock();
-});
-
-// ─── Debug log ────────────────────────────────────────────────────────────────
+// ─── Debug log ───────────────────────────────────────────────────────────────
 function copyLog() {
-  const text = lastResultLines.join('\n');
-  if (navigator.clipboard) {
-    navigator.clipboard.writeText(text).then(function() {
-      alert('日志已复制');
-    });
-  }
+  navigator.clipboard.writeText(lastResultLines.join('\n')).then(() => snack('已复制'));
 }
-
 function downloadLog() {
-  const text = lastResultLines.join('\n');
-  const blob = new Blob([text], { type: 'text/plain' });
+  const blob = new Blob([lastResultLines.join('\n')], { type: 'text/plain' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = 'rootmekit-log-' + new Date().toISOString().replace(/[:.]/g, '-') + '.txt';
+  a.download = 'rootmekit-' + new Date().toISOString().replace(/[:.]/g, '-') + '.txt';
   a.click();
   URL.revokeObjectURL(a.href);
 }
 
-// ─── Init ─────────────────────────────────────────────────────────────────────
-buildDeviceButtons();
+// ─── Init ────────────────────────────────────────────────────────────────────
+buildDeviceChips();
 </script>
 </body>
+</html>
